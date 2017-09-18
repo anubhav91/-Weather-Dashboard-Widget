@@ -4,7 +4,7 @@ Wordpress plugin to show weather information for Brookvale,NSW,Australia on dash
 
 ### Installing
 
-Download place folder in your plugins directory in wordpress. And install plugin named Weather Widget .
+Download and extract folder in your plugins directory in wordpress. And install plugin named Weather Widget .
 
 ## Authors
 
