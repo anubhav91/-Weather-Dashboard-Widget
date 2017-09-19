@@ -5,6 +5,31 @@ Description: Weather Widget
 Author: Abstain Solutions
 Version:11
 */
+wp_clear_scheduled_hook( 'weather_task_hook' );
+function my_cron_schedules($schedules){
+    if(!isset($schedules["45min"])){
+        $schedules["45min"] = array(
+            'interval' => 45*60,
+            'display' => __('Once every 45 minutes'));
+    }
+    return $schedules;
+}
+add_filter('cron_schedules','my_cron_schedules');
+
+if (!wp_next_scheduled('weather_task_hook')) {
+	wp_schedule_event( time(), '45min', 'weather_task_hook' );
+}
+
+add_action ( 'weather_task_hook', 'weather_cron_task_function' );
+function weather_api_save()
+{
+	$request = 'http://api.openweathermap.org/data/2.5/weather?q=Brookvale,NSW,Australia&appid=64e504230084c0d1eced463bed45bd40';
+    $response  = file_get_contents($request);	
+	update_option('weather_api_response',$response);
+}
+function weather_cron_task_function() {
+	weather_api_save();
+}
 function load_custom_wp_admin_style() 				// adding scripts
 {
 	$url  = plugin_dir_url( __FILE__ ) ;
@@ -30,21 +55,23 @@ add_action( 'wp_dashboard_setup', 'weather_widget_main_function' );
 function kelvin_to_fahrenheit($given_value)		
 {
 	$fahrenheit=9/5*($given_value-273.15)+32;
-	return  round($fahrenheit) ;
+	return  number_format($fahrenheit) ;
 }
 //Kelvin to celsius equation
 function kelvin_to_celsius($given_value)			
 {
 	$celsius=$given_value-273.15;
-	return  round($celsius) ;
+	return  number_format($celsius, 1) ;
 }
 function weather_child_function() 
 {
+	$response = get_option('weather_api_response');
+	if(empty($response))
+		weather_api_save(); 
+	$response_updated = get_option('weather_api_response');
 	date_default_timezone_set('Australia/Sydney');			// setting timezone
-	$data = '';
-	$request = 'http://api.openweathermap.org/data/2.5/weather?q=Brookvale,NSW,Australia&appid=64e504230084c0d1eced463bed45bd40';
-    $response  = file_get_contents($request);				// read request 
-    $jsonobj  = json_decode($response);						// decode data
+	$data = '';	
+    $jsonobj  = json_decode($response_updated);						// decode data
 	foreach($jsonobj as $key=>$value)
 	{
 		${$key} = $value;
